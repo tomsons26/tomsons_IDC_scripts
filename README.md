@@ -10,6 +10,10 @@ Marks selection as a certain color, for example as the default decompiled color.
 
 Dumps function names to a runnable IDC, way faster then the one bellow with the downside being it only dumps function symbols.
 
+## generate_olly_function_list.idc
+
+Dumps function names CnCNet olly tools compatible CSV.
+
 ## generate_symbol_idc.idc
 
 Dumps function names and if chosen symbol names to a runnable IDC.
