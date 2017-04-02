@@ -4,7 +4,7 @@ Random IDC scripts made to make things simpler working on projects im associated
 
 ## colorscript.idc
 
-Marks selection as decompiled. 
+Marks selection as a certain color, for example as the default decompiled color. 
 
 ## generate_function_only_symbol_idc.idc
 
