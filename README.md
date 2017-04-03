@@ -28,4 +28,4 @@ Written to make it easier to make ini files for https://github.com/jonwil/unlink
 
 ## vtablefunctionnamer.idc
 
-Based on https://github.com/eyevc/idc_public_script/tree/master/ida_win_scripts , rewritten to pick up various Westwood sig in addition to standard ones
+Based on https://github.com/eyevc/idc_public_script/tree/master/ida_win_scripts , rewritten to pick up various Westwood sig in addition to standard ones. Best used with Class Informer plugin https://sourceforge.net/projects/classinformer/
