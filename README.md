@@ -6,6 +6,10 @@ Random IDC scripts made to make things simpler working on projects im associated
 
 Marks selection as a certain color, for example as the default decompiled color. 
 
+## demangler.idc
+
+For all your batch demangling needs!
+
 ## generate_function_only_symbol_idc.idc
 
 Dumps function names to a runnable IDC, way faster then the one bellow with the downside being it only dumps function symbols.
