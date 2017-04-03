@@ -8,6 +8,7 @@
 //hhmmmm
 
 #include <idc.idc>
+#include "badnames.idc"
 
 #define Script_Version "0.57.1"
 
@@ -139,73 +140,4 @@ static Print_Symbol_Info(Handle, Is_Just_Functions)
 	}
 	//Continue running as long as neither Segment_Start and Segment_End are bad addresses
 	while (Segment_Start != BADADDR && Segment_End != BADADDR);
-}
-
-
-//Checks for names that shouldn't be printed
-static Check_For_Bad_Name(String)
-{
-	auto p;
-
-	if (String == "")
-	{
-		return 1;
-	}
-
-	p = substr(String, 0, 4);
-	if (p == "sub_" ||
-		p == "SEH_" ||
-		p == "unk_" ||
-		p == "loc_" ||
-		p == "off_" ||
-		p == "flt_" ||
-		p == "dbl_" ||
-		p == "asc_")
-	{
-		return 1;
-	}
-
-	p = substr(String, 0, 5);
-	if (p == "byte_" ||
-		p == "word_" ||
-		p == "stru_")
-	{
-		return 1;
-	}
-
-	p = substr(String, 0, 6);
-	if (p == "dword_" ||
-		p == "__imp_" ||
-		p == "j_sub_" ||
-		p == "j_SEH_" ||
-		p == "qword_")
-	{
-		return 1;
-	}
-
-	p = substr(String, 0, 7);
-	if (p == "locret_" ||
-		p == "__imp__")
-	{
-		return 1;
-	}
-
-	p = substr(String, 0, 8);
-	if (p == "nullsub_" ||
-		p == "j_nullsu" ||
-		p == "xmmword_")
-	{
-		return 1;
-	}
-
-	p = substr(String, 0, 16);
-	if (p == "unknown_libname_" ||
-		p == "j_unknown_libnam" ||
-		p == "__IMPORT_DESCRIP")
-	{
-		return 1;
-	}
-
-
-	return 0;
 }
