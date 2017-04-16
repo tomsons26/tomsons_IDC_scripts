@@ -64,6 +64,6 @@ static Print_Comments(comment)
 					Message("%s\n", Demangled);
 				}
 			}
-	Message("// End of list.\n");	
 	}
+	Message("// End of list.\n");	
 }
