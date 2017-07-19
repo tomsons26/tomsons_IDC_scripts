@@ -30,7 +30,7 @@ static main()
     for ( Address = EXECUTABLESTART; Address < Segment_End; Address = Address + 4 ) {
 
         //Every few 0x10000 print where the scan is at currently
-        if ( Address % 0x10000 == 0 ) Message("Scanning: %x/%x\n", Address, Segment_End);
+        if ( Address % 0x10000 == 0 ) Message("Scanning: 0x%08X/0x%08X\n", Address, Segment_End);
 
         //Make sure the address we are checking is code so it doesn't get stuck for a long time at areas full of alignment bytes
         if ( isCode(GetFlags(Address)) ) {
@@ -58,10 +58,14 @@ static main()
                         Function_Name = form("%s", Function_Name);
 
                         //Rename the function setting the name as public and replacing invalid chars with _
-                        ret = MakeNameEx(Function_Start, Function_Name, SN_PUBLIC | SN_NOCHECK);
-                        Message("Found name at %x and Renamed %x to %s\n", Current_Address, Function_Start, Function_Name);
-
-                        if ( ret == 0 ) Failed = Failed + 1;
+                        ret = MakeNameEx(Function_Start, Function_Name, SN_PUBLIC | SN_NOCHECK | SN_NOWARN);
+                        if ( ret != 0 ) {
+                        Message("Found name at 0x%08X and Renamed 0x%08X to %s\n", Current_Address, Function_Start, Function_Name);
+                        }
+                        else {
+                        Message("Can't rename 0x%08X to \"%s\" using assert line at 0x%08X\n", Function_Start, Function_Name, Current_Address);
+                        Failed = Failed + 1;
+                        }
                     }
                 }
             }
