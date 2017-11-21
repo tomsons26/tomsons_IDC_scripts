@@ -7,8 +7,8 @@
 
 #include <idc.idc>
 
-#define printonly false
-#define demangle false
+#define printonly 0
+#define demangle 0
 
 static print_functions()
 {
