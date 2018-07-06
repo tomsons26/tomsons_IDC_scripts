@@ -5,7 +5,7 @@
 
 #include <idc.idc>
 
-static main()
+static mark_as_color()
 {
 	auto Current,Selection_Start,Selection_End; 
 
@@ -30,5 +30,11 @@ static main()
 		}
 	}
 	//Refreshes all disassembly views
-	Refresh(); 
+	Refresh();
+    RefreshLists();
+}
+
+static main(void)
+{
+	AddHotkey("7", "mark_as_color");
 }

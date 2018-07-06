@@ -39,6 +39,6 @@ static main()
 	RunPlugin("dwarf", 0);
 	
 	//Restore original base
-	Message("Watcom Symbol Loader Script - Restoring original base of %X\n", Base);
+	Message("Watcom Symbol Loader Script - Restoring original base of 0x%X\n", Base);
 	RebaseProgram(Base, MSF_SILENT);
 }
