@@ -10,14 +10,14 @@
 #include <idc.idc>
 #include "badnames.idc"
 
-#define Script_Version "0.57.1"
+#define Script_Version "0.58.0"
 
 //Binary alignment thats typically between functions
 #define Alignment 4
 
 static main() 
 {
-	auto Just_Functions;
+	auto Just_Functions, SpecificString, Filter;
 	auto Segment_Start, Segment_End;
 	auto Path, Handle;
 	auto IDB_Path, Input_Filename, Checksum;
@@ -39,6 +39,21 @@ static main()
 	{
 		return;
 	}
+
+	//Show Save as dialog
+
+	Filter = AskYN(0, "Write only symbols with a specific string?");
+
+	//If got -1(Cancel) stop execution
+	if(Filter == -1)
+	{
+		return;
+	}
+
+    SpecificString = "";
+    if (Filter){
+        SpecificString = AskStr("", "Type In string to filter.\nCase Sensitive!\nLeave black for all");
+    }
 
 	//Show Save as dialog
 	Path = AskFile(1, "*.idc", "Save idc script");
@@ -88,7 +103,7 @@ static main()
 
 
 	//Start dumping symbol names
-	Print_Symbol_Info(Handle, Just_Functions);
+	Print_Symbol_Info(Handle, Just_Functions, SpecificString);
 
 
 	//Print symbol frame start
@@ -99,11 +114,19 @@ static main()
 	fclose(Handle);
 }
 
+static String_Is_Present(check, string)
+{
+    if (strstr(check, string) != -1) {
+        return 1;
+    }
+    return 0;
+}
 
-static Print_Symbol_Info(Handle, Is_Just_Functions)
+static Print_Symbol_Info(Handle, Is_Just_Functions, SpecificString)
 {
 	auto Segment_Start, Segment_End;
 	auto Symbol_Address, Item_Flags, String;
+    auto process;
 
 	do
 	{
@@ -120,7 +143,12 @@ static Print_Symbol_Info(Handle, Is_Just_Functions)
 		while (Symbol_Address < Segment_End)
 		{
 			String = GetTrueNameEx(BADADDR, Symbol_Address);
-			if (Check_For_Bad_Name(String) == 0)
+            process = 1;
+            if (SpecificString != "") {
+                process = String_Is_Present(String, SpecificString);
+            }
+            
+			if (process && Check_For_Bad_Name(String) == 0)
 			{
 				Item_Flags = GetFlags(Symbol_Address);
 				if (!Is_Just_Functions || (Item_Flags & FF_CODE) == FF_CODE)
