@@ -9,28 +9,22 @@
 //
 
 #include <idc.idc>
+#include "find_helpers.idc"
 
 #define EXECUTABLESTART 0x00401000
-
-// Wrapper for GetString to make the code easier to read
-// Gets name from pointer to a string
-static Get_Name(address)
-{
-    return GetString(GetOperandValue(address, 0), -1, 0);
-}
 
 // define your checks for assert/print lines here
 static Scan_For_Line(address)
 {
     auto disasm;
     disasm = GetDisasm(address);
-    if (strstr(disasm, "[edx+64h]") != -1) {
+    if (String_Is_Present(disasm, "[edx+64h]")) {
         return 0x1D;
     }
-    if (strstr(disasm, "[edx+6Ch]") != -1) {
+    if (String_Is_Present(disasm, "[edx+6Ch]")) {
         return 0x1D;
     }
-    if (strstr(disasm, "print_9EA930") != -1) {
+    if (String_Is_Present(disasm, "print_9EA930")) {
         return 0x5;
     }
     return -1;
@@ -38,68 +32,51 @@ static Scan_For_Line(address)
 
 static main()
 {
-    auto Segment_End, Renamed, Failed, Address, Current_Address, Function_Start, Function_Name, distancetoname;
+    auto segment_end, renamed, failed, address, current_address, function_start, new_name, distancetoname;
 
-    Segment_End = SegEnd(EXECUTABLESTART);
-    Renamed = 0;
-    Failed = 0;
-
-    for (Address = EXECUTABLESTART; Address < Segment_End; Address = Address + 1) {
-        // Every 0x10000 print where the scan is at currently
-        if (Address % 0x10000 == 0)
-            Message("Scanning: 0x%08X/0x%08X\n", Address, Segment_End);
-
-        //reset any previous values
-        Function_Name = 0;
+    segment_end = SegEnd(EXECUTABLESTART);
+    renamed = 0;
+    failed = 0;
+    Message("Starting Scan from 0x%08X to 0x%08X\n", address, segment_end);
+    for (address = EXECUTABLESTART; address < segment_end; address = NextHead(address, -1)) {
+        // Every 0x20000 print where the scan is at currently
+        if (address % 0x20000 == 0) {
+            Message("Scanning: 0x%08X/0x%08X\n", address, segment_end);
+        }
+        // reset any previous values
+        new_name = 0;
         distancetoname = -1;
-        Function_Start = -1;
+        function_start = -1;
 
         // Make sure the address we are checking is code so it doesn't get stuck for a long time at areas full of alignment
         // bytes
-        if (isCode(GetFlags(Address))) {
+        if (isCode(GetFlags(address))) {
             // Scan for the assert line
-            distancetoname = Scan_For_Line(Address);
+            distancetoname = Scan_For_Line(address);
             if (distancetoname != -1) {
                 // Step back to the asm line that sets the function name for the assert to print
-                Current_Address = Address - distancetoname;
-
+                current_address = address - distancetoname;
                 // Make sure we have no function name already and the Operand is indeed a reference to a string
-                if (strstr(GetOpnd(Current_Address, 0), "asc_") != -1) {
-                    // Get the function name from the Operand Value
-                    Function_Name = Get_Name(Current_Address);
-                    Function_Start = GetFunctionAttr(Current_Address, FUNCATTR_START);
+                if (Is_String_Pointer(current_address)) {
+                    new_name = Get_Name(current_address);
+                    // Message("Found name at 0x%08X - %s\n", current_address, new_name);
+                    // Make sure the current function is named sub_ before renaming it
+                    if (new_name != 0 && Is_Unamed_Function(address)) {
+                        function_start = GetFunctionAttr(address, FUNCATTR_START);
+                        // Create the function name format
+                        new_name = form("%s", new_name);
 
-                    // Message("Found name at 0x%08X - %s\n", Current_Address, Function_Name);
-                    if (Function_Start != -1) {
-                        // Make sure the current function is named sub_ before renaming it
-                        if (strstr(GetFunctionName(Address), "sub_") != -1) {
-                            // Create the function name format
-                            Function_Name = form("%s", Function_Name);
-
-                            // Rename the function setting the name as public and replacing invalid chars with _
-                            if (MakeNameEx(Function_Start, Function_Name, SN_PUBLIC | SN_NOCHECK | SN_NOWARN) != 0) {
-                                Message("Found name at 0x%08X and Renamed 0x%08X to %s\n",
-                                    Current_Address,
-                                    Function_Start,
-                                    Function_Name);
-                                Renamed = Renamed + 1;
-                            } else {
-                                Message("Can't rename 0x%08X to \"%s\" using assert line at 0x%08X\n",
-                                    Function_Start,
-                                    Function_Name,
-                                    Current_Address);
-                                Failed = Failed + 1;
-                            }
-                            
+                        if (Rename_Function(function_start, new_name)) {
+                            Message("Found name at 0x%08X and renamed 0x%08X to %s\n", address, function_start, new_name);
+                            renamed++;
+                        } else {
+                            Message("Can't rename 0x%08X to \"%s\" using assert line at 0x%08X\n", function_start, new_name, address);
+                            failed++;
                         }
-                    } else {
-                        Message("Could not get Function Start of Function at 0x%08X\nThis should not happen!\n",
-                            Current_Address);
                     }
-                    
                 }
             }
         }
     }
-    Message("Renamed %d functions\nFailed to rename %d functions\n", Renamed, Failed);
+    Message("Renamed %d functions\nFailed to rename %d functions\n", renamed, failed);
 }
