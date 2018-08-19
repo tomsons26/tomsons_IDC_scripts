@@ -134,9 +134,9 @@ static main()
             if ( funindex == 20 )
             {
                 Message("Can't use name %s\n", szCleanName);
-                Message("Possibly there are invalid characters in it!\n");
-                Message("Entry in Question is now a gap!\n");
-                Message("Fix this in the IDc code or manually add the entry in the vtable struct!\n");
+                Message("Possibly there are invalid characters in it!\nAdded A dummy entry in its place!\n");
+                AddStrucMember(structID, form("DUMMY_%x", iIndex * 4), iIndex * 4, 0x20000400, -1, 4);
+                Message("Fix this in the IDC code or manually add the entry in the vtable struct!\n");
                 break;
             }
         };
