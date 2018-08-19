@@ -130,8 +130,8 @@ static main()
         auto NameToTry = szCleanName;
         while (AddStrucMember(structID, NameToTry, iIndex * 4, 0x20000400, -1, 4) == STRUC_ERROR_MEMBER_NAME) {
             funindex++;
-            NameToTry = szCleanName + "_" + ltoa(funindex, 16);
-            if ( funindex < 20)
+            NameToTry = szCleanName + "_" + ltoa(funindex, 10);
+            if ( funindex == 20 )
             {
                 Message("Can't use name %s\n", szCleanName);
                 Message("Possibly there are invalid characters in it!\n");
