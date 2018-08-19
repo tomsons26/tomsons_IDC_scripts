@@ -74,12 +74,12 @@ static main()
     // Ask for settings
     skipAmt = AskLong(0, "Number of vtable entries to ignore for indexing:");
     
-    //try Getting Name from Vtable itself, else ask for it
-    structName = NameEx(pAddress, pAddress);
+    //try Getting Name from Vtable itself, else set a preset
+    structName = GetTrueNameEx(pAddress, pAddress);
     // make sure we have a name and it has a char typical to mangled names
-    if (structName != "" && strstr(structName, "off_")) {
+    if (structName != "" && strstr(structName, "off_") == -1) {
         //MSVC/GCC Old
-        if(strstr(structName, "?") != -1 || strstr(structName, "__vt") != -1){
+        if(strstr(structName, "??") != -1 || strstr(structName, "__vt") != -1){
             structName = Demangle(structName, INF_SHORT_DN);
             structName = substr(structName, 0, strstr(structName, "::")) + "_vtable";
         }
@@ -88,10 +88,16 @@ static main()
             structName = Demangle(structName, INF_SHORT_DN);
             structName = substr(structName, strstr(structName, "'") + 1, strstr(structName, "::")) + "_vtable";
         }
+        //Watcom
+        if(strstr(structName, "W?") != -1 ){
+            Message("substring - %s\n", substr(structName, strstr(structName, ":") + 1, strstr(structName, "$$")));
+            structName = substr(structName, strstr(structName, ":") + 1, strstr(structName, "$$")) + "_vtable";
+        }
     } else {
-        structName = AskStr("_vtable", "Enter the name of the vtable struct:");
+        structName = "class_vtable";
     }
-    
+    structName = AskStr(structName, "Set the name of the vtable struct:");
+
     SetStatus(IDA_STATUS_WORK);
 
     // If the vtable struct already exists, delete it
