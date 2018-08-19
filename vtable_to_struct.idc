@@ -77,7 +77,7 @@ static main()
     //try Getting Name from Vtable itself, else ask for it
     structName = NameEx(pAddress, pAddress);
     // make sure we have a name and it has a char typical to mangled names
-    if (structName != "") {
+    if (structName != "" && strstr(structName, "off_")) {
         //MSVC/GCC Old
         if(strstr(structName, "?") != -1 || strstr(structName, "__vt") != -1){
             structName = Demangle(structName, INF_SHORT_DN);
