@@ -73,8 +73,25 @@ static main()
 
     // Ask for settings
     skipAmt = AskLong(0, "Number of vtable entries to ignore for indexing:");
-    structName = AskStr("CClass_vtable", "Enter the name of the vtable struct:");
-
+    
+    //try Getting Name from Vtable itself, else ask for it
+    structName = NameEx(pAddress, pAddress);
+    // make sure we have a name and it has a char typical to mangled names
+    if (structName != "") {
+        //MSVC/GCC Old
+        if(strstr(structName, "?") != -1 || strstr(structName, "__vt") != -1){
+            structName = Demangle(structName, INF_SHORT_DN);
+            structName = substr(structName, 0, strstr(structName, "::")) + "_vtable";
+        }
+        //GCC New
+        if(strstr(structName, "_Z") != -1 ){
+            structName = Demangle(structName, INF_SHORT_DN);
+            structName = substr(structName, strstr(structName, "'") + 1, strstr(structName, "::")) + "_vtable";
+        }
+    } else {
+        structName = AskStr("_vtable", "Enter the name of the vtable struct:");
+    }
+    
     SetStatus(IDA_STATUS_WORK);
 
     // If the vtable struct already exists, delete it
