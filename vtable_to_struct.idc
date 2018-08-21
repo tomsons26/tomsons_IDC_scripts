@@ -56,6 +56,9 @@ static main()
     auto skipAmt;
     auto structName;
     auto structID;
+    auto Write_Struct, Print_Struct;
+    Write_Struct = 1;
+    Print_Struct = 1;
 
     SetStatus(IDA_STATUS_WORK);
 
@@ -100,16 +103,20 @@ static main()
 
     SetStatus(IDA_STATUS_WORK);
 
-    // If the vtable struct already exists, delete it
-    structID = GetStrucIdByName(structName);
-    if (structID != -1) {
-        Message("Deleted old vtable struct\n");
-        DelStruc(structID);
+    if (Write_Struct) {
+        // If the vtable struct already exists, delete it
+        structID = GetStrucIdByName(structName);
+        if (structID != -1) {
+            Message("Deleted old vtable struct\n");
+            DelStruc(structID);
+        }
+
+        // Create the struct to import vtable names into
+        structID = AddStruc(-1, structName);
     }
-
-    // Create the struct to import vtable names into
-    structID = AddStruc(-1, structName);
-
+    if (Print_Struct) {
+        Message("struct %s {\n", structName);
+    }
     auto szFuncName, szFullName, szCleanName;
 
     // For linux, skip the first entry
@@ -131,7 +138,7 @@ static main()
             }
         }
 
-        szFuncName = GetFunctionName(Dword(pAddress));
+        szFuncName = NameEx(Dword(pAddress), Dword(pAddress));
         if (strlen(szFuncName) == 0) {
             break;
         }
@@ -143,7 +150,9 @@ static main()
 
         if (strstr(szFullName, "_ZN") != -1) {
             Warning("You must toggle GCC v3.x demangled names!\n");
-            DelStruc(structID);
+            if (Write_Struct) {
+                DelStruc(structID);
+            }
             break;
         }
 
@@ -151,26 +160,35 @@ static main()
 
         auto funindex = 0;
         auto NameToTry = szCleanName;
-        while (AddStrucMember(structID, NameToTry, iIndex * 4, 0x20000400, -1, 4) == STRUC_ERROR_MEMBER_NAME) {
-            funindex++;
-            NameToTry = szCleanName + "_" + ltoa(funindex, 10);
-            if ( funindex == 20 )
-            {
-                Message("Can't use name %s\n", szCleanName);
-                Message("Possibly there are invalid characters in it!\nAdded A dummy entry in its place!\n");
-                AddStrucMember(structID, form("DUMMY_%x", iIndex * 4), iIndex * 4, 0x20000400, -1, 4);
-                Message("Fix this in the IDC code or manually add the entry in the vtable struct!\n");
-                break;
-            }
-        };
-        funindex = 0;
-
+        if (Write_Struct) {
+            while (AddStrucMember(structID, NameToTry, iIndex * 4, 0x20000400, -1, 4) == STRUC_ERROR_MEMBER_NAME) {
+                funindex++;
+                NameToTry = szCleanName + "_" + ltoa(funindex, 10);
+                if ( funindex == 20 )
+                {
+                    Message("Can't use name %s\n", szCleanName);
+                    Message("Possibly there are invalid characters in it!\nAdded A dummy entry in its place!\n");
+                    AddStrucMember(structID, form("DUMMY_%x", iIndex * 4), iIndex * 4, 0x20000400, -1, 4);
+                    Message("Fix this in the IDC code or manually add the entry in the vtable struct!\n");
+                    break;
+                }
+            };
+            funindex = 0;
+        }
+        if (Print_Struct) {
+            Message("    int %s;\n", NameToTry);
+        }
         pAddress = pAddress + 4;
         iIndex++;
         docheck = 1;
     };
-
-    Message("Added %d vtable entries to struct %s.\n", iIndex, structName);
+    if (Print_Struct) {
+        Message("}\n");
+        Message("Printed %d vtable entries\n", iIndex);
+    }
+    if (Write_Struct) {
+        Message("Added %d vtable entries to struct %s.\n", iIndex, structName);
+    }
     Message("\nDone.\n\n");
     SetStatus(IDA_STATUS_READY);
 }
