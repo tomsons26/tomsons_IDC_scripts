@@ -16,7 +16,6 @@ static main()
     auto nearloc;
     auto rettype, funcname, prottype, classtype;
 
-    // Remove class name if any
     nearloc = strstr(name, "near");
     if (nearloc != -1) {
         
