@@ -71,7 +71,10 @@ static main()
         //print address of function
         Message(">(0x%08X);\n    return func(this)\n", GetFunctionAttr(here, FUNCATTR_START));
         //print end of function
-        Message("#else\n#endif\n}\n");
+        Message("#else\n");
+        Message("    DEBUG_ASSERT_PRINT(false, \"Unimplemented function '%%\s\' called!\\n\", __FUNCTION__);\n");
+
+        Message("#endif\n}\n");
     } else {
         Message("near not found!\n");
     }
