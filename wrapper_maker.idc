@@ -16,6 +16,7 @@ static main()
     auto nearloc;
     auto rettype, funcname, prottype, classtype;
 
+    //hack, relies on near being in string to work
     nearloc = strstr(name, "near");
     if (nearloc != -1) {
         
@@ -69,7 +70,14 @@ static main()
         }      
         
         //print address of function
-        Message(">(0x%08X);\n    return func(this)\n", GetFunctionAttr(here, FUNCATTR_START));
+        Message(">(0x%08X);\n", GetFunctionAttr(here, FUNCATTR_START));
+        //check for a return type
+        if (rettype != "void " && rettype != "void *"){
+        Message("    return func(this);\n");
+        } else {
+        Message("    func(this);\n");
+        }
+
         //print end of function
         Message("#else\n");
         Message("    DEBUG_ASSERT_PRINT(false, \"Unimplemented function '%%\s\' called!\\n\", __FUNCTION__);\n");
