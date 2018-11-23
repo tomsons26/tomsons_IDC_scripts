@@ -72,6 +72,11 @@ static Count_Prototype_Members(prottype)
     return count;
 }
 
+static Clean_Up_Return(rettype)
+{
+    return substr(rettype, 0, strstr(rettype, "const"));
+}
+
 static main()
 {
     //Fetch the current function name
@@ -100,7 +105,7 @@ static main()
         }
         
         // print function definition
-        Message("%s%s", rettype, funcname);
+        Message("%s%s", Clean_Up_Return(rettype), funcname);
         if (Is_Void(prottype)){
             //proto has no members
             Message("()\n");
@@ -111,11 +116,11 @@ static main()
         
         //print wrapper
         Message("{\n#ifndef CHRONOSHIFT_STANDALONE\n");
-        Message("    %s(*func)", rettype);
+        Message("    %s(*func)", Clean_Up_Return(rettype));
         Print_Prototype(classtype, prottype);
         
         // print function definition
-        Message(" = reinterpret_cast<%s(*)", rettype);
+        Message(" = reinterpret_cast<%s(*)", Clean_Up_Return(rettype));
         Print_Prototype(classtype, prottype);
         
         //print address of function
