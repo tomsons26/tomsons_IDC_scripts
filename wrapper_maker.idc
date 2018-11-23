@@ -55,12 +55,29 @@ static Print_Prototype(classtype, prottype)
     } 
 }
 
+
+static Count_Prototype_Members(prottype)
+{
+    auto count, i;
+    count = 0;
+    if (!Is_Void(prottype)) {
+        count++;
+    }
+    
+    for (i = 0; i < strlen(prottype); i++) {
+        if (prottype[i] == ",") {
+            count++;
+        }
+    }
+    return count;
+}
+
 static main()
 {
     //Fetch the current function name
     auto name = Demangle(GetTrueName(GetFunctionAttr(here, FUNCATTR_START)), INF_LONG_DN);
     
-    auto nearloc;
+    auto nearloc, memb_count;
     auto rettype, funcname, prottype, classtype;
 
     //hack, relies on near being in string to work
@@ -103,20 +120,40 @@ static main()
         
         //print address of function
         Message(">(0x%08X);\n", GetFunctionAttr(here, FUNCATTR_START));
+        
         //check for a return type
         if (Is_Void(rettype)){
-            Message("    func(this);\n");
+            Message("    func(");
         } else {
-            Message("    return func(this);\n");
+            Message("    return func(");
         }
-
+        
+        if (classtype != "") {
+            Message("this");
+        }
+        
+        //write dummy args
+        memb_count = Count_Prototype_Members(prottype);
+        if (memb_count != 0) {
+            if (classtype != "") {
+                Message(", ");
+            }
+            auto i;
+            for (i = 0; i < memb_count; i++) {
+                Message("a%d", i+1);
+                if (i != (memb_count - 1)) {
+                    Message(", ");
+                }
+            }
+        }
+        Message(");\n");
         //print end of function
         Message("#else\n");
         Message("    DEBUG_ASSERT_PRINT(false, \"Unimplemented function called!\\n\");\n");
         if (!Is_Void(rettype)){
             Message("    return 0;\n");
         }
-        Message("#endif\n}\n");
+        Message("#endif\n}\n");        
     } else {
         Message("near not found!\n");
     }
