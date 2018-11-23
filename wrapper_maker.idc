@@ -9,6 +9,24 @@
 
 #include <idc.idc>
 
+static Is_Void(checktype)
+{
+    if (checktype == "void const" ){
+        return 1;
+    }
+    
+    if (checktype == "void *") {
+        return 0;
+    }
+    if (checktype == "void ") {
+        return 1;
+    }
+    if (checktype == "void") {
+        return 1;
+    }
+    return 0;
+}
+
 static Print_Prototype(classtype, prottype)
 {
     Message("(");
@@ -20,7 +38,7 @@ static Print_Prototype(classtype, prottype)
     }
     
     //check if return is void
-    if (prottype == "void" && prottype != "void *"){
+    if (Is_Void(prottype)){
         //if so end proto definition
         Message(")");
     }
@@ -66,7 +84,7 @@ static main()
         
         // print function definition
         Message("%s%s", rettype, funcname);
-        if (prottype == "void" && prottype != "void *"){
+        if (Is_Void(prottype)){
             //proto has no members
             Message("()\n");
         } else {
@@ -86,7 +104,7 @@ static main()
         //print address of function
         Message(">(0x%08X);\n", GetFunctionAttr(here, FUNCATTR_START));
         //check for a return type
-        if (rettype == "void " && rettype != "void *"){
+        if (Is_Void(rettype)){
             Message("    func(this);\n");
         } else {
             Message("    return func(this);\n");
@@ -94,10 +112,8 @@ static main()
 
         //print end of function
         Message("#else\n");
-        Message("    DEBUG_ASSERT_PRINT(false, \"Unimplemented function '%%\s\' called!\\n\", __FUNCTION__);\n");
-        if (rettype == "void " && rettype != "void *"){
-            //do nothing
-        } else {
+        Message("    DEBUG_ASSERT_PRINT(false, \"Unimplemented function called!\\n\");\n");
+        if (!Is_Void(rettype)){
             Message("    return 0;\n");
         }
         Message("#endif\n}\n");
