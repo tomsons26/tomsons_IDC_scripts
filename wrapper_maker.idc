@@ -81,23 +81,19 @@ static main()
 {
     //Fetch the current function name
     auto name = Demangle(GetTrueName(GetFunctionAttr(here, FUNCATTR_START)), INF_LONG_DN);
-    
     auto nearloc, memb_count;
     auto rettype, funcname, prottype, classtype;
-
+    
     //hack, relies on near being in string to work
     nearloc = strstr(name, "near");
     if (nearloc != -1) {
         
         //get return type
         rettype = substr(name, 0, nearloc);
-        
         //get function name
         funcname = substr(name, nearloc + 5, strstr(name, "("));
-        
         //get prototype
         prottype = substr(name, strstr(name, "(") + 1, strstr(name, ")"));
-
         //get class if there is one
         if (strstr(name, "::") != -1)
         {
@@ -106,17 +102,17 @@ static main()
         
         // print function definition
         Message("%s%s", Clean_Up_Return(rettype), funcname);
-        if (Is_Void(prottype)){
-            //proto has no members
-            Message("()\n");
-        } else {
-            //else we print proto
-            Message("(%s)\n", prottype);
+        
+        //print proto
+        Message("(");
+        if (!Is_Void(prottype)){
+            Message("%s", prottype);
         }
+        Message(")\n");
         
         //print wrapper
-        Message("{\n#ifndef CHRONOSHIFT_STANDALONE\n");
-        Message("    %s(*func)", Clean_Up_Return(rettype));
+        Message("{\n#ifndef CHRONOSHIFT_STANDALONE\n    ");
+        Message("%s(*func)", Clean_Up_Return(rettype));
         Print_Prototype(classtype, prottype);
         
         // print function definition
@@ -126,13 +122,13 @@ static main()
         //print address of function
         Message(">(0x%08X);\n", GetFunctionAttr(here, FUNCATTR_START));
         
-        //check for a return type
-        if (Is_Void(rettype)){
-            Message("    func(");
-        } else {
-            Message("    return func(");
+        //print call
+        Message("    ");//spacing
+        if (!Is_Void(rettype)){
+            Message("return ");
         }
         
+        Message("func(");
         if (classtype != "") {
             Message("this");
         }
@@ -152,6 +148,7 @@ static main()
             }
         }
         Message(");\n");
+        
         //print end of function
         Message("#else\n");
         Message("    DEBUG_ASSERT_PRINT(false, \"Unimplemented function called!\\n\");\n");
