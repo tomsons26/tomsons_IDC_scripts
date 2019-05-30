@@ -15,6 +15,20 @@
 //Binary alignment thats typically between functions
 #define Alignment 4
 
+static Demangle_Name(mangled, mode)
+{
+	auto func_name;
+	
+	func_name = Demangle(mangled, mode);//Short demangled name is INF_SHORT_DN
+	
+	//If demangled result blank use original string
+	if (func_name == "")
+	{
+	func_name = mangled;
+	}
+    return func_name;
+}
+
 static main() 
 {
 	auto Just_Functions, SpecificString, Filter;
@@ -87,7 +101,7 @@ static String_Is_Present(check, string)
 static Print_Symbol_Info(Handle, Is_Just_Functions, SpecificString)
 {
 	auto Segment_Start, Segment_End;
-	auto Symbol_Address, Item_Flags, String;
+	auto Symbol_Address, Item_Flags, String, DemanString;
     auto process;
 
 	do
@@ -115,7 +129,12 @@ static Print_Symbol_Info(Handle, Is_Just_Functions, SpecificString)
 				Item_Flags = GetFlags(Symbol_Address);
 				if (!Is_Just_Functions || (Item_Flags & FF_CODE) == FF_CODE)
 				{
-					fprintf(Handle, "0x%X \"%s\"\n", Symbol_Address, String);
+                    DemanString = Demangle_Name(String, INF_SHORT_DN);
+                    //pesky spaces,
+                    //ghidra doesn't like them so ill just discard the symbol for now......
+                    if (String_Is_Present(DemanString, " ") == 0){
+                        fprintf(Handle, "0x%X %s\n", Symbol_Address, DemanString);
+                    }
 				}
 			}
 
