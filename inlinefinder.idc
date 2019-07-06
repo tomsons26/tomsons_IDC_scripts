@@ -1,10 +1,15 @@
 //
 // Comments common inlines
 // by tomsons26
+// After the script has been run once you can execute it via Check_For_Inline() or
+// add code to bind a keyboard combo to trigger it.
+// There are some quirks to this script, sometimes it will go past the first inline
+// and find something later this is because it searches for patterns in sequence
+// when this happens tweak the threshold to a better fitting value
 
 #include <idc.idc>
 #define THRESHOLD 10
-#define THRESHOLD2 150
+#define THRESHOLD2 10//tweak this if something gets skipped
 
 static Check_For_Pattern_Extra(function, pattern, extrapattern, extradir)
 {
@@ -77,10 +82,10 @@ static Check_Here_For_Pattern(function, pattern)
         
         if (comment) { 
             Message("Inline Finder - Found %s at 0x%X\n", function, found);
-            
+
             auto current,start,Selection_End;
             Selection_End = found + (strlen(pattern) / 3);
-            
+
             auto comnt;
             comnt = form("************** inline %s", function);
             ExtLinA(found,0, comnt);
@@ -117,6 +122,8 @@ static Comment_Inline()
     }
 }
 
+//this define wrapper is so that it ends execution if it finds something,
+//as else we could get overlaps or even long wait time until the entire db is parsed
 #define CHECK(x, y) if (Check_Here_For_Pattern(x, y)) { return 1; }
 
 //inline commenting seems pretty messy so lets try this instead
@@ -129,7 +136,7 @@ static Check_For_Inline()
         CHECK("strchr", "8A 06 3A C2 74 12 3C 00 74 0C 46 8A 06 3A C2 74 07 46 3C 00 75 EA 2B F6");
         CHECK("strlen", "29 C9 49 31 C0 F2 AE F7 D1 49");
         CHECK("strcat", "57 2B C9 49 B0 00 F2 AE 4F 8A 06 88 07 3C 00 74 10 8A 46 01 83 C6 02 88 47 01 83 C7 02 3C 00 75 E8");
-        CHECK("strcpy", "8A 06 88 07 3C 00 74 10 8A 46 01 83 C6 02 88 47 01 83 C7 02 3C 00 75 E8");
+        CHECK("strcpy", "8A 06 88 07 3C 00 74 ?? 8A ?? 01 83 ?? 02 88 ?? 01 83 ?? 02 3C 00 75 E8");
         CHECK("memcmp", "31 C0 F3 A6 74 05 19 C0 83 D8 FF");
         CHECK("memcpy", "57 89 C8 C1 E9 02 F2 A5 8A C8 80 E1 03 F2 A4 5F");   
         
