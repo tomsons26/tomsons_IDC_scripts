@@ -77,6 +77,22 @@ static Check_Here_For_Pattern(function, pattern)
         
         if (comment) { 
             Message("Inline Finder - Found %s at 0x%X\n", function, found);
+            
+            auto current,start,Selection_End;
+            Selection_End = found + (strlen(pattern) / 3);
+            
+            auto comnt;
+            comnt = form("************** inline %s", function);
+            ExtLinA(found,0, comnt);
+
+            for (current = found; current!=BADADDR; current = NextHead(current, Selection_End))
+            {
+                //Sets the color, format is address, type, and color in hex as 0xBBGGRR
+                if (SetColor(current,CIC_ITEM,0xFFFFAA)==0)
+                {
+                    Message("**SetColor function Error**\n") ; 
+                }
+            }
         } else {
             //Message("Inline Finder - Ignoring Found %s at 0x%X as it doesn't fit with requirements\n", function, found);
         }
@@ -109,12 +125,16 @@ static Check_For_Inline()
     auto compiler;
     compiler = GetCharPrm(INF_COMPILER);
     if (compiler == COMP_WATCOM) {
+        //Watcom inlines
         CHECK("strchr", "8A 06 3A C2 74 12 3C 00 74 0C 46 8A 06 3A C2 74 07 46 3C 00 75 EA 2B F6");
         CHECK("strlen", "29 C9 49 31 C0 F2 AE F7 D1 49");
         CHECK("strcat", "57 2B C9 49 B0 00 F2 AE 4F 8A 06 88 07 3C 00 74 10 8A 46 01 83 C6 02 88 47 01 83 C7 02 3C 00 75 E8");
-        CHECK("strcpy", "74 ? 8A ? 01 83 ? 02 88 ? 01 83 ? 02");
+        CHECK("strcpy", "74 ?? 8A ?? 01 83 ?? 02 88 ?? 01 83 ?? 02");
         CHECK("memcmp", "31 C0 F3 A6 74 05 19 C0 83 D8 FF");
-        CHECK("memcpy", "57 89 C8 C1 E9 02 F2 A5 8A C8 80 E1 03 F2 A4 5F");     
+        CHECK("memcpy", "57 89 C8 C1 E9 02 F2 A5 8A C8 80 E1 03 F2 A4 5F");   
+        
+        //Common Westwood inlines
+        CHECK("Timer::Time()", "8B 1D ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 83 FB FF 74 1F 8B 0D ?? ?? ?? ?? BB ?? ?? ?? ?? 85 C9 75 04 31 C0 EB 07 89 C8 E8 ?? ?? ?? 00")
     }
     if (compiler == COMP_MS) {
         Message("Inline Finder - No patterns added yet!");
