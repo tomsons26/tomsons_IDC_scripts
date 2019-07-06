@@ -80,10 +80,9 @@ static main()
 
 
 	//Print db Path and MD5 as a comment for safety sake to confirm its the correct IDB
-	fprintf(Handle,"//\n//IDB Path for this IDB was %s\n", IDB_Path);	
+	//fprintf(Handle,"//\n//IDB Path for this IDB was %s\n", IDB_Path);	
 	//Message("//Filename for the binary was %s\n", Input_Filename );
-	
-	
+
 	//Print Checksum definition
 	fprintf(Handle,"\n#define Checksum \"%s\"\n\n", Checksum);
 
@@ -94,7 +93,7 @@ static main()
 
 	//Print symbol frame start
 	fprintf(Handle,"{\n");
-	
+
 	//Print Checksum check function
 	fprintf(Handle,"	if (GetInputMD5() != Checksum)\n	{\n");
 	fprintf(Handle,"		Message(\"Checksum does not match current IDB!\\n\");\n");
@@ -147,7 +146,7 @@ static Print_Symbol_Info(Handle, Is_Just_Functions, SpecificString)
             if (SpecificString != "") {
                 process = String_Is_Present(String, SpecificString);
             }
-            
+
 			if (process && Check_For_Bad_Name(String) == 0)
 			{
 				Item_Flags = GetFlags(Symbol_Address);
