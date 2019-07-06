@@ -67,7 +67,7 @@ static Check_Here_For_Pattern(function, pattern)
         ea = here;
         found = FindBinary(ea, SEARCH_DOWN, pattern);
         if (found == BADADDR) {
-            Message("Inline Finder - No Pattern Found");
+            Message("Inline Finder - No Pattern Found\n");
             return 0;
         }
         //if address more than found threshold
@@ -129,7 +129,7 @@ static Check_For_Inline()
         CHECK("strchr", "8A 06 3A C2 74 12 3C 00 74 0C 46 8A 06 3A C2 74 07 46 3C 00 75 EA 2B F6");
         CHECK("strlen", "29 C9 49 31 C0 F2 AE F7 D1 49");
         CHECK("strcat", "57 2B C9 49 B0 00 F2 AE 4F 8A 06 88 07 3C 00 74 10 8A 46 01 83 C6 02 88 47 01 83 C7 02 3C 00 75 E8");
-        CHECK("strcpy", "74 ?? 8A ?? 01 83 ?? 02 88 ?? 01 83 ?? 02");
+        CHECK("strcpy", "8A 06 88 07 3C 00 74 10 8A 46 01 83 C6 02 88 47 01 83 C7 02 3C 00 75 E8");
         CHECK("memcmp", "31 C0 F3 A6 74 05 19 C0 83 D8 FF");
         CHECK("memcpy", "57 89 C8 C1 E9 02 F2 A5 8A C8 80 E1 03 F2 A4 5F");   
         
