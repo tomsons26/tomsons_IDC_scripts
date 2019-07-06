@@ -3,8 +3,8 @@
 // by tomsons26
 
 #include <idc.idc>
-#include "find_helpers.idc"
 #define THRESHOLD 10
+#define THRESHOLD2 150
 
 static Check_For_Pattern_Extra(function, pattern, extrapattern, extradir)
 {
@@ -20,8 +20,7 @@ static Check_For_Pattern_Extra(function, pattern, extrapattern, extradir)
 
         comment = 0;
         //if no pattern set proceed with comment
-        if (extrapattern == "")
-        {
+        if (extrapattern == "") {
             comment = 1;
         } else {
 
@@ -41,7 +40,7 @@ static Check_For_Pattern_Extra(function, pattern, extrapattern, extradir)
             }
         }
 
-        if (comment){ 
+        if (comment) { 
             Message("Inline Finder - Found %s at 0x%X\n", function, ea);
             new_name = form("       !!!!!INLINE!!!!!\n\n            Inlined Function is %s", function);
             MakeComm(ea, new_name);
@@ -57,7 +56,35 @@ static Check_For_Pattern(function, pattern)
     Check_For_Pattern_Extra(function, pattern, "", 0);
 }
 
-static main()
+//checks current location for a inline function within a threshold
+static Check_Here_For_Pattern(function, pattern)
+{
+    auto ea;
+    auto comment;
+    auto found;
+
+        comment = 0;
+        ea = here;
+        found = FindBinary(ea, SEARCH_DOWN, pattern);
+        if (found == BADADDR) {
+            Message("Inline Finder - No Pattern Found");
+            return 0;
+        }
+        //if address more than found threshold
+        if (ea > found - THRESHOLD2) {
+            comment = 1;
+        }
+        
+        if (comment) { 
+            Message("Inline Finder - Found %s at 0x%X\n", function, found);
+        } else {
+            //Message("Inline Finder - Ignoring Found %s at 0x%X as it doesn't fit with requirements\n", function, found);
+        }
+        return comment;
+}
+
+
+static Comment_Inline()
 {
     auto compiler;
     compiler = GetCharPrm(INF_COMPILER);
@@ -71,5 +98,30 @@ static main()
     }
     if (compiler == COMP_MS) {
         Message("Inline Finder - No patterns added yet!");
-    }    
+    }
+}
+
+#define CHECK(x, y) if (Check_Here_For_Pattern(x, y)) { return 1; }
+
+//inline commenting seems pretty messy so lets try this instead
+static Check_For_Inline()
+{
+    auto compiler;
+    compiler = GetCharPrm(INF_COMPILER);
+    if (compiler == COMP_WATCOM) {
+        CHECK("strchr", "8A 06 3A C2 74 12 3C 00 74 0C 46 8A 06 3A C2 74 07 46 3C 00 75 EA 2B F6");
+        CHECK("strlen", "29 C9 49 31 C0 F2 AE F7 D1 49");
+        CHECK("strcat", "57 2B C9 49 B0 00 F2 AE 4F 8A 06 88 07 3C 00 74 10 8A 46 01 83 C6 02 88 47 01 83 C7 02 3C 00 75 E8");
+        CHECK("strcpy", "74 ? 8A ? 01 83 ? 02 88 ? 01 83 ? 02");
+        CHECK("memcmp", "31 C0 F3 A6 74 05 19 C0 83 D8 FF");
+        CHECK("memcpy", "57 89 C8 C1 E9 02 F2 A5 8A C8 80 E1 03 F2 A4 5F");     
+    }
+    if (compiler == COMP_MS) {
+        Message("Inline Finder - No patterns added yet!");
+    }  
+}
+
+static main()
+{
+    Check_For_Inline();
 }
