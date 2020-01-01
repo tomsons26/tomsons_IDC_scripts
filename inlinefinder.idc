@@ -90,7 +90,7 @@ static Check_Here_For_Pattern(function, pattern)
 
             auto comnt;
             comnt = form("************** inline %s", function);
-            ExtLinA(found,0, comnt);
+            ExtLinA(ItemHead(found), 0, comnt);
 
             for (current = found; current!=BADADDR; current = NextHead(current, Selection_End))
             {
@@ -138,13 +138,28 @@ static Check_For_Inline()
         Check_Here_For_Pattern("strchr", "8A 06 3A C2 74 12 3C 00 74 0C 46 8A 06 3A C2 74 07 46 3C 00 75 EA 2B F6");
         Check_Here_For_Pattern("strlen", "29 C9 49 31 C0 F2 AE F7 D1 49");
         Check_Here_For_Pattern("strcat(note it has a inlined strcpy)", "57 2B C9 49 B0 00 F2 AE 4F 8A 06 88 07 3C 00 74 10 8A 46 01 83 C6 02 88 47 01 83 C7 02 3C 00 75 E8");
-        Check_Here_For_Pattern("strcpy", "8A 06 88 07 3C 00 74 ?? 8A ?? 01 83 ?? 02 88 ?? 01 83 ?? 02 3C 00 75 E8");
+        Check_Here_For_Pattern("strcpy", "8A 06 88 07 3C 00 74 ? 8A ? 01 83 ? 02 88 ? 01 83 ? 02 3C 00 75 E8");
         Check_Here_For_Pattern("memcmp", "31 C0 F3 A6 74 05 19 C0 83 D8 FF");
         Check_Here_For_Pattern("memcpy", "57 89 C8 C1 E9 02 F2 A5 8A C8 80 E1 03 F2 A4 5F");   
         
         //Common Westwood inlines
-        Check_Here_For_Pattern("Timer::Time()", "8B 1D ?? ?? ?? ?? 8B 15 ?? ?? ?? ?? 83 FB FF 74 1F 8B 0D ?? ?? ?? ?? BB ?? ?? ?? ?? 85 C9 75 04 31 C0 EB 07 89 C8 E8 ?? ?? ?? 00");
-        Check_Here_For_Pattern("Pixel_To_Lepton", "C1 ?? 08 83 ?? 0C ?? 18 00 00 00");//test
+        Check_Here_For_Pattern("MAYBE Timer::Time()", "83 ? FF 74 ? 8B ? ? ? ? ? ?");
+        Check_Here_For_Pattern("Timer::Time()", "8B 1D ? ? ? ? 8B 15 ? ? ? ? 83 FB FF 74 ? 8B 0D ? ? ? ? BB ? ? ? ? 85 C9 75 04 31 C0 EB 07 89 C8 E8 ? ? ? 00");
+        Check_Here_For_Pattern("Timer::Time()", "83 ? FF 74 12 8B 15 ? ? ? ? 29 ? 39 C2 73 04 29 D0 EB 02 31 C0");
+        
+        Check_Here_For_Pattern("Pixel_To_Lepton 1", "C1 E2 08 83 C2 0C ? 18 00 00 00 89 D0 C1 FA 1F F7 ?");
+        Check_Here_For_Pattern("Pixel_To_Lepton 2", "C1 E2 08 ? 18 00 00 00 ? ? ? ? 89 ? ? D0 C1 FA 1F F7 ?");
+        
+        //noninlined version
+        //Check_Here_For_Pattern("Lepton_To_Pixel", "80 00 00 00 89 D0 C1 FA 1F C1 E2 08 1B C2 C1 F8 08");
+  
+        //RAs inlined versions
+        //Check_Here_For_Pattern("Lepton_To_Pixel", "C1 E0 03 8D 90 80 00 00 00 89 D0 C1 FA 1F C1 E2 08 1B C2 C1 F8 08"); 
+        Check_Here_For_Pattern("Lepton_To_Pixel", "0F BF D0 8D 04 95 00 00 00 00 29 D0 C1 E0 03 8D 90 80 00 00 00 89 D0 C1 FA 1F C1 E2 08 1B C2 C1 F8"); 
+        Check_Here_For_Pattern("Cell_To_Coord 1", "8B 45 ? 83 E0 7F 88 45 ? ? 45 ? 80 8B 45 ? C1 E0 12 B2 80 C1 E8 19 88 55 ? 88 45 ? 8B"); 
+        Check_Here_For_Pattern("Cell_To_Coord 2", "8B 45 ? 83 E0 7F 88 45 ? ? 45 ? ? 80 C1 E0 12 ? ? ? C1 E8 19 88 ? ? 88 45 ? 8B");
+        Check_Here_For_Pattern("MAYBE Coord_To_Cell", "? ? 81 ? 7F C0 ? ?");
+        
     }
     if (compiler == COMP_MS) {
         Message("Inline Finder - No patterns added yet!");
