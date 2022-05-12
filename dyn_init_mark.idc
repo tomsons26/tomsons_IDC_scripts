@@ -12,7 +12,9 @@ static main()
 {
     auto addr;
 
+    auto prefix = 1;
     auto parse = 0;
+    auto name = 0;
 
     //!! change segment name if needed
     auto segm = get_segm_by_sel(SegByName(".data"));
@@ -35,6 +37,15 @@ static main()
                 break;
             }
             ++i;
+        
+            if (prefix) {
+                name = get_func_name(Dword(addr));
+                if (strlen(name) >= 4 && strstr(name, "sub_") != -1) {
+                    name = "static_init_" + substr(name, 4, -1);
+                    MakeName(Dword(addr), name);
+                    //Message("naming %x, %s\n", Dword(addr), name);
+                }
+            }
         
             SetColor(Dword(addr), CIC_FUNC, 0xd7d7d7);
             addr = addr + 4;
