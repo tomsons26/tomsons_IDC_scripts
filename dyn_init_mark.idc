@@ -18,12 +18,22 @@ static main()
 
     //!! change segment name if needed
     auto segm = get_segm_by_sel(SegByName(".data"));
+    //auto segm = get_segm_by_sel(SegByName(".rdata"));
     Message("segment at 0x%X\n", segm);
     
     //is the address valid, does it start with 0 as MSVC dyn init list starts, is it a msvc binary
-    if (segm != BADADDR && Dword(segm) == 0 && GetCharPrm(INF_COMPILER) == COMP_MS) {
-        // skip over the 0
-        addr = segm + 4;
+    if (segm != BADADDR) {
+
+        // cover binaries that have 0s as first entries
+        if (Dword(segm) == 0) { 
+            // skip over the 0
+            addr = segm + 4;
+        } else {
+            // skip over the guard
+            addr = segm + 4;
+            // skip over the 0
+            addr = addr + 4;
+        }
         parse = 1;
     }
 
