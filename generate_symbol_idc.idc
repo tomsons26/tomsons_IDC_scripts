@@ -136,8 +136,12 @@ static Print_Symbol_Info(Handle, Is_Just_Functions, SpecificString)
 
 	Segment_Start = FirstSeg();
 	Segment_End = SegEnd(Segment_Start);
-	do
+	while(1)
 	{
+		if (Segment_Start == BADADDR || Segment_End == BADADDR) {
+			break;
+		}
+	
 		Symbol_Address = Segment_Start;
 		while (Symbol_Address < Segment_End)
 		{
@@ -165,6 +169,4 @@ static Print_Symbol_Info(Handle, Is_Just_Functions, SpecificString)
 		Segment_Start = NextSeg(Segment_Start);
 		Segment_End = SegEnd(Segment_Start);
 	}
-	//Continue running as long as neither Segment_Start and Segment_End are bad addresses
-	while (Segment_Start != BADADDR && Segment_End != BADADDR);
 }
