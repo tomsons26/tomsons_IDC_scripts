@@ -5,6 +5,18 @@ import idautils
 
 bad_name = ["SEH_", "unknown_lib", "_SEH"]
 
+
+def Demangle_Name(mangled):	
+    func_name = ""
+    #comment out if needed mangled
+    func_name = demangle_name(mangled, INF_SHORT_DN)
+
+    #If demangled result blank use original string
+    if func_name == None or func_name == "":
+        func_name = mangled
+
+    return func_name
+
 def Check_Name(string, specific):
 
     if specific:
@@ -23,7 +35,7 @@ def Check_Name(string, specific):
 def Write_IDC(idc_file, specific):
     for ea, name in idautils.Names():
         if Check_Name(name, specific):
-            idc_file.write(format("0x%X \"%s\"\n" % (ea, name)))
+            idc_file.write(format("0x%X \"%s\"\n" % (ea, Demangle_Name(name))))
 
 #this is the main
 file_name = AskFile(1, "*.symlist", "symlist File")
