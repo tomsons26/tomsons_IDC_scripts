@@ -21,7 +21,9 @@ def Set_Function_Name(address, name):
         MakeNameEx(int(address, 16), name, False)
     else:
         from ghidra.program.model.symbol.SourceType import USER_DEFINED
+        from ghidra.program.model.symbol import SymbolUtilities
         addr = toAddr(long(address, 16))
+        name = SymbolUtilities.replaceInvalidChars(name, True)
         if getFunctionAt(addr):
             getFunctionAt(addr).setName(name, USER_DEFINED)
         else:
@@ -36,7 +38,7 @@ if f:
         path = f.absolutePath
     
     for line in file(path):
-        entry = line.split()
+        entry = line.split("\"", 2)
         address = entry[0]
         name = entry[1]
         #print "Creating Symbol", name, "at Address", address
