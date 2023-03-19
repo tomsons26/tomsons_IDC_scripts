@@ -25,11 +25,19 @@ static main()
     // 10.6 ftell chunk
     auto addr106_2 = FindBinary(base, SEARCH_DOWN, "F6 42 0C 80 74 0D F6 42 0D 10 74 07");
     
-    //pre 10.6 ftell chunk
+    // pre 10.6 ftell chunk
     auto addrp106 = FindBinary(base, SEARCH_DOWN, "F6 42 0D 10 74 05 8D 0C 1E EB 02 29");
-    
-    //pre 10.5A fclose
-    auto addr105a = FindBinary(base, SEARCH_DOWN, "53 52 89 C3 FF 15 ? ? ? ? A1 ? ? ? ? 85 C0 75 08 B8 FF FF FF FF 5A 5B C3 3B 58 04 74 04 8B 00 EB EB FF 15 ? ? ? ? BA 01 00 00 00 89 D8 E8 ? ? ? ? 5A 5B C3");
+
+    // 11.0A change - Under Windows NT, the C Library now uses VirtualAlloc() and VirtualFree() in place of LocalAlloc() and LocalFree().
+    //
+    // 10.5A __CreateNewNHeap_ uses VirtualAlloc
+    auto addr105a =FindBinary(0, SEARCH_DOWN, "83 3D ? ? ? 00 FE 74 F0 89 E0 E8 ? ? ? ? 85 C0 74 5D 6A 40 68 00 10 00 00 8B 4C 24 08 51 6A 00 E8 ? ? ? ?");
+ 
+    // pre 10.5A __CreateNewNHeap_ uses LocalAlloc
+    auto addrp105a1 = FindBinary(0, SEARCH_DOWN, "83 3D ? ? ? 00 FE 74 F3 89 E0 E8 ? ? ? ? 85 C0 74 55 8B 0C 24 51 6A 00 E8 ? ? ? ? ");
+
+    // pre 10.5A fclose
+    auto addrp105a2 = FindBinary(base, SEARCH_DOWN, "53 52 89 C3 FF 15 ? ? ? ? A1 ? ? ? ? 85 C0 75 08 B8 FF FF FF FF 5A 5B C3 3B 58 04 74 04 8B 00 EB EB FF 15 ? ? ? ? BA 01 00 00 00 89 D8 E8 ? ? ? ? 5A 5B C3");
 
     if (addr11b != BADADDR) {
         Message("Watcom Version Checker - This is a Watcom 11.0B or later binary\n\n");
@@ -37,22 +45,32 @@ static main()
     } 
     
     if (addr106_1 != BADADDR) {
-        Message("Watcom Version Checker - This is a Watcom 10.6 to Watcom 11.0B(excluding) binary. Matched Signature 1\n\n");
+        Message("Watcom Version Checker - This is a Watcom 10.6 to Watcom 11.0B(excluding?) binary. Matched Signature 1\n\n");
         return;
     }
    
     if (addr106_2 != BADADDR) {
-        Message("Watcom Version Checker - This is a Watcom 10.6 to Watcom 11.0B(excluding) binary Matched Signature 2\n\n");
+        Message("Watcom Version Checker - This is a Watcom 10.6 to Watcom 11.0B(excluding?) binary Matched Signature 2\n\n");
         return;
     } 
 
     if (addrp106 != BADADDR) {    
         if (addr105a != BADADDR) {
-            Message("Watcom Version Checker - This is a Watcom 10.5 or earlier binary\n\n");  
+            Message("Watcom Version Checker - This is a Watcom 10.5A binary\n\n");
+            return;
+        }   
+        
+        if (addrp105a1 != BADADDR) {
+            Message("Watcom Version Checker - This is a Watcom 10.5 or earlier binary. Matched Signature 1\n\n");
+            return;
+        }   
+            
+        if (addrp105a2 != BADADDR) {
+            Message("Watcom Version Checker - This is a Watcom 10.5 or earlier binary. Matched Signature 2\n\n");
             return;    
         }
         
-        Message("Watcom Version Checker - This is a Watcom 10.5 binary\n\n");
+        Message("Watcom Version Checker - This is pre Watcom 10.6 binary\n\n");
         return;
     }
     
