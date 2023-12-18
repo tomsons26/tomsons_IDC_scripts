@@ -117,14 +117,17 @@ static fixup_function_refs(a, seg_end)
     }
 }
 
-//set to address after last jmp
-#define end 0x100028EC
-
 static main()
 {
     auto adr = MinEA();
     auto seg_end = SegEnd(adr);
-    
+
+    auto end = AskAddr(BADADDR, "Input address that's after the last jump");
+
+    if (adr == BADADDR) {
+        return;
+    }
+
     while (1) {
         adr = FindCode(adr, 3);
         
