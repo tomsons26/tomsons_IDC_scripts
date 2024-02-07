@@ -33,6 +33,16 @@ static get_relative_jmp_target(a)
     }
 }
 
+static fixup_watcom_specs()
+{        
+    set_inf_attr(INF_COMPILER, COMP_WATCOM); //set compiler as watcom if not set already
+    set_inf_attr(INF_MODEL, 115); // set fastcall(actually watcall)
+    set_inf_attr(INF_SIZEOF_ALGN, 1); //watcom pads to 1
+        
+    Message("---- Set Watcom Compiler specs ----\n");
+}
+
+
 static fixup_watcom_startup()
 {
     auto found = BADADDR;
@@ -73,12 +83,8 @@ static fixup_watcom_startup()
             
             // don't want to break existing idb settings
             if (get_inf_attr(INF_COMPILER) != COMP_WATCOM) {
-                set_inf_attr(INF_COMPILER, COMP_WATCOM); //set compiler as watcom if not set already
-                set_inf_attr(INF_MODEL, 115); // set fastcall(actually watcall)
-                set_inf_attr(INF_SIZEOF_ALGN, 1); //watcom pads to 1
+                fixup_watcom_specs();
             }
-            
-            Message("---- Set Watcom Compiler specs ----\n");
             
             // everything properly set up, proceed
             Analysis(1);
