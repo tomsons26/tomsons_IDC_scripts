@@ -159,6 +159,7 @@ static Check_For_Inline()
         Check_Here_For_Pattern("Cell_To_Coord 1", "8B 45 ? 83 E0 7F 88 45 ? ? 45 ? 80 8B 45 ? C1 E0 12 B2 80 C1 E8 19 88 55 ? 88 45 ? 8B"); 
         Check_Here_For_Pattern("Cell_To_Coord 2", "8B 45 ? 83 E0 7F 88 45 ? ? 45 ? ? 80 C1 E0 12 ? ? ? C1 E8 19 88 ? ? 88 45 ? 8B");
         Check_Here_For_Pattern("MAYBE Coord_To_Cell", "? ? 81 ? 7F C0 ? ?");
+        Check_Here_For_Pattern("MAYBE Coord_Centered | part of Coord_To_Cell", "? 80 ? ? ? 88 ? ? 88 ? ? 8B 45 ?");
         
     }
     if (compiler == COMP_MS) {
