@@ -79,4 +79,9 @@ static main()
     "?deallocate@?$allocator@V",
     "@@@_STL@@QBEXPAV",
     "@@I@Z");
+	
+	Rename_Xrefs_To("?allocate@__new_alloc@_STL@@SAPAXI@Z",
+    "?allocate@?$allocator@V",
+    "@@@_STL@@QBEPAV",
+    "@@IPBX@Z");
 }
