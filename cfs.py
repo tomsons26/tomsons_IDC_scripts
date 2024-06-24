@@ -1,8 +1,8 @@
 #------------------------------------------------------------------------------
-# IDA Plugin to import and export function signatures
+# IDA Plugin to import and export function hashes
 #
-# To export a list select functions in the "Functions View", rightclick and "Export Signature"
-# To import a list "File", "Load File", "CFS Signature File"
+# To export a list select functions in the "Functions View", rightclick and "Export Hash"
+# To import a list "File", "Load File", "CFH Hash File"
 #
 # Maybe TODO:
 #   backport it to IDA 7.0
@@ -32,6 +32,9 @@ import ida_name
 import ida_kernwin
 import ida_ua
 import ida_ida
+import hashlib
+
+from hashlib import sha1
 
 UA_MAXOP=ida_ida.UA_MAXOP
 
@@ -67,10 +70,20 @@ else:
 	QtCore.pyqtSlot = QtCore.Slot
 	from PySide.QtGui import QApplication
 
-class FunctionSig:
-	def __init__(self, address, sig):
+class FunctionHash:
+	def __init__(self, address, hash):
 		self.address = address
-		self.sig = sig
+		self.hash = hash
+
+# IDA is annoying sometimes making jump tables at end of function part of it so need to fix end..
+def FixupFunctionEnd(start, end):
+	func = ida_funcs.func_t(start)
+	res = ida_funcs.find_func_bounds(func, ida_funcs.FIND_FUNC_EXIST)
+
+	if res == ida_funcs.FIND_FUNC_UNDEF:
+		return end
+	else:
+		return func.end_ea
 
 #------------------------------------------------------------------------------
 # Import handler
@@ -100,6 +113,7 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 		for i, addr in enumerate(idautils.Functions()):
 			start = idc.get_func_attr(addr, idc.FUNCATTR_START)
 			end = idc.get_func_attr(addr, idc.FUNCATTR_END)
+			end = FixupFunctionEnd(start, end)
 			func_name = idc.get_func_name(start)
 
 			# We'll create a signature for the entire function
@@ -109,11 +123,11 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 				print(f"Failed to make a signature for function {func_name} at {start:x}")
 				continue
 
-			sig_list.append(FunctionSig(start, sig))
+			sig_list.append(FunctionHash(start, sha1(sig.encode('utf-8')).hexdigest()))
 
 		return sig_list
 
-	def find_sig_match(self, list, signature):
+	def find_hash_match(self, list, hash):
 		"""
 		Tries to find current signature in the current IDB signature list.
 		TODO: maybe handle duplicates
@@ -122,7 +136,7 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 
 		for i in list:
 			#print("checking {} against {}".format(i.sig, signature))
-			if signature in i.sig:
+			if hash in i.hash:
 				matches.append(i.address)
 				break
 
@@ -139,7 +153,7 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 		max_ea = idaapi.cvar.inf.max_ea
 		is_64bit = idc.__EA64__
 
-		print("Processing Signatures...")
+		print("Processing Hashes...")
 
 		idaapi.show_wait_box("Processing... Please Wait (This may take a bit)")
 
@@ -151,7 +165,7 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 
 			for line in lines:
 
-				ida_kernwin.replace_wait_box("Processing signature %d/%d" % (counter, count))
+				ida_kernwin.replace_wait_box("Processing hash %d/%d" % (counter, count))
 
 				if idaapi.wasBreak():
 					break
@@ -161,24 +175,23 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 				if not line or line.startswith("//"):
 					continue
 
+				# Hash
+				hash, line = line.split(",", 1)
+				hash = hash.strip()[1:-1]  # Remove surrounding quotes
 
-				# Index
-				#index, line = line.split(",", 1)
-				#index = int(index)
+				print(hash)
 
 				# Function Name
-				func_name, line = line.split(",", 1)
-				func_name = func_name.strip()[1:-1]  # Remove surrounding quotes
+				func_name = line.strip()[3:-1]  # Remove surrounding quotes and //
 
-				# Signature
-				signature = line.strip()[1:-1]  # Remove surrounding quotes
+				print(func_name)
 
 				# Find all matches
 				ea = idaapi.BADADDR
-				matches = self.find_sig_match(sig_list, signature)
+				matches = self.find_hash_match(sig_list, hash)
 				matches_count = len(matches)
 				if matches_count > 1:
-					print("Multiple signature matches[%i] found for [%s] ignoring sig." % (matches_count, func_name))
+					print("Multiple hash matches[%i] found for [%s] ignoring hash." % (matches_count, func_name))
 					continue
 
 				# Set EA if we have only 1 hit, change this if you wish.
@@ -202,7 +215,8 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 							#print("[RESOLVED]")
 						elif func_idb_name_str and len(func_idb_name_str) >= 3:
 							# all this crud should be renamed, don't touch anything else
-							if func_idb_name_str[:3] == "sub" or "unknown_libname" in func_idb_name_str or "@std@" in func_idb_name_str:
+							#if func_idb_name_str[:4] == "sub_" or func_idb_name_str[:3] == "__Z" or "unknown_libname" in func_idb_name_str or "@std@" in func_idb_name_str or "@_STL@" in func_idb_name_str:
+							if func_idb_name_str[:4] == "sub_" or func_idb_name_str[:3] == "__Z" or "unknown_libname" in func_idb_name_str:
 								ida_name.set_name(ea, func_name, ida_name.SN_FORCE)
 								#idc.set_cmt(ea, "SIG-RESOLVED " + func_name, 1)
 								resolved_count += 1
@@ -215,9 +229,12 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 						error_count += 1
 						print("[BAD!!!] Unable to resolve =>", func_name, "@ [0x{:X}]".format(ea))
 				else:
-					print("[NOT FOUND] Signature {} not found in the binary".format(counter))
+					print("[NOT FOUND] Hash {} not found in the binary".format(counter))
 
 				counter += 1
+
+		del lines[:]
+		del sig_list[:]
 
 		print("------------------------------------------")
 		print("Resolved ({}/{}) Functions, {} Lines!".format(resolved_count, counter, count))
@@ -228,7 +245,7 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 		return True
 
 	def main(self):
-		sig_file_path = idaapi.ask_file(0, "*.cfs", "Signature Definition File")
+		sig_file_path = idaapi.ask_file(0, "*.cfh", "Function Hash Definition File")
 		if sig_file_path:
 			print("------------------------------------------")
 			print(f"{PLUGIN_NAME} {__VERSION__} - {__AUTHOR__}")
@@ -240,8 +257,8 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 			if not self.process_signatures(sig_file_path):
 			   idaapi.warning("Some errors occurred while importing.")
 
-			# Hide the "Please wait" dialog
-			idaapi.hide_wait_box()
+		# Hide the "Please wait" dialog
+		idaapi.hide_wait_box()
 
 
 	# Invoke the main
@@ -267,8 +284,8 @@ def PLUGIN_ENTRY():
 class CFSSignaturePlugin(idaapi.plugin_t):
 
 	flags = idaapi.PLUGIN_PROC | idaapi.PLUGIN_HIDE
-	comment = "Import and export function signatures."
-	help = "Select functions right-click, click Export Signatures."
+	comment = "Import and export function function hashes."
+	help = "Select functions right-click, click Export Function Hashes."
 	wanted_name = PLUGIN_NAME
 	wanted_hotkey = ""
 
@@ -328,8 +345,8 @@ class CFSSignaturePlugin(idaapi.plugin_t):
 	# IDA Actions
 	#--------------------------------------------------------------------------
 
-	ACTION_EXPORT_SIGNATURES  = "cfs:export_signatures"
-	ACTION_IMPORT_SIGNATURES  = "cfs:import_action"
+	ACTION_EXPORT_SIGNATURES  = "cfh:export_signatures"
+	ACTION_IMPORT_SIGNATURES  = "cfh:import_action"
 	ACTION_TOOLTIP_ICON = 198
 
 	def _init_sig_actions(self):
@@ -344,20 +361,20 @@ class CFSSignaturePlugin(idaapi.plugin_t):
 			# Describe the action using python3 copy
 			action_desc1 = idaapi.action_desc_t(
 				self.ACTION_EXPORT_SIGNATURES,                              # The action name.
-				"Export Signatures",                                        # The action text.
+				"Export Hashes",                                        # The action text.
 				IDACtxEntry(export_signatures_go),                          # The action handler.
 				"",                                                         # Optional: action shortcut
-				"Export Signatures",                                        # Optional: tooltip
+				"Export Hashes",                                        # Optional: tooltip
 				35                                                          # Icon
 			)
 		else:
 			# Describe the action using python2 copy
 			action_desc1 = idaapi.action_desc_t(
 				self.ACTION_EXPORT_SIGNATURES,                          # The action name.
-				"Export Signatures",                                    # The action text.
+				"Export Hashes",                                    # The action text.
 				IDACtxEntry(export_signatures_go),                      # The action handler.
 				"",                                                     # Optional: action shortcut
-				"Export Signatures",                                    # Optional: tooltip
+				"Export Hashes",                                    # Optional: tooltip
 				35                                                      # Icon
 			)
 
@@ -370,7 +387,7 @@ class CFSSignaturePlugin(idaapi.plugin_t):
 				'CFS Signature File...',  # The action text.
 				ImportFileMenuHandler(),  # The action handler.
 				"",   # Optional: the action shortcut.
-				'Import Signatures',  # Optional: the action tooltip.
+				'Import Hashes',  # Optional: the action tooltip.
 				self.ACTION_TOOLTIP_ICON
 			)
 		else:
@@ -380,7 +397,7 @@ class CFSSignaturePlugin(idaapi.plugin_t):
 				'CFS Signature File...',  # The action text.
 				ImportFileMenuHandler(),  # The action handler.
 				"",   # Optional: the action shortcut.
-				'Import Signatures',  # Optional: the action tooltip.
+				'Import Hashes',  # Optional: the action tooltip.
 				self.ACTION_TOOLTIP_ICON
 			)
 
@@ -569,21 +586,6 @@ class SigMaker:
 
 		return " ".join(signature)
 
-def GenerateSignature(ea):
-	sig_maker = SigMaker()
-
-	func = idaapi.get_func(ea)
-	if func is None:
-		print("No function at 0x%08x" % ea)
-		return None
-
-	start = func.start_ea
-	end = func.end_ea
-
-	signature = sig_maker.make_sig_default(start, end)
-
-	return signature
-
 def export_signatures_go(ctx):
 	sig_maker = SigMaker()
 
@@ -599,7 +601,7 @@ def export_signatures_go(ctx):
 		return
 
 	# Prompt for the output file path
-	filename = ida_kernwin.ask_file(1, "*.cfs", "Enter the name of the  file:")
+	filename = ida_kernwin.ask_file(1, "*.cfh", "Enter the name of the  file:")
 	if not filename:
 		print("No file selected.")
 		return
@@ -611,11 +613,14 @@ def export_signatures_go(ctx):
 
 	# Build sigs and export!
 	count = 0
+	sig_list = list()
+
 	with open(filename, "w") as file:
 		for func_ea in selected_funcs:
 
 			start = idc.get_func_attr(func_ea, idc.FUNCATTR_START)
 			end = idc.get_func_attr(func_ea, idc.FUNCATTR_END)
+			end = FixupFunctionEnd(start, end)
 			func_name = idc.get_func_name(start)
 
 			if idaapi.wasBreak():
@@ -633,10 +638,22 @@ def export_signatures_go(ctx):
 				print(f"Failed to make a signature for function {func_name} at {start:x}")
 				continue
 
-			# Write the signature to the file
-			#file.write(f"{count},\"{func_name}\",\"{sig}\"\n")
-			file.write(f"{prefix}\"{func_name}\",\"{sig}\"\n")
+			h = sha1(sig.encode('utf-8')).hexdigest()
+			#sig_list.append(f"{count},\"{func_name}\",\"{sig}\"\n")
+			#sig_list.append(f"{prefix}\"{func_name}\",\"{sig}\"\n")
+			#sig_list.append(f"\"{h}\",//\"{func_name}\",\"{sig}\"\n")
+			sig_list.append(f"\"{h}\",//\"{func_name}\"\n")
 			count += 1
+
+		if count:
+			# Write the signature to the file
+			for line in sig_list:
+				file.write(line)
+
+		file.close()
+
+	del sig_list[:]
+	del selected_funcs[:]
 
 	idaapi.hide_wait_box()
 
