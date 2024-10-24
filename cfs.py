@@ -167,7 +167,7 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 
 				ida_kernwin.replace_wait_box("Processing hash %d/%d" % (counter, count))
 
-				if idaapi.wasBreak():
+				if ida_kernwin.user_cancelled():
 					break
 
 				line = line.strip()
@@ -223,6 +223,7 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 								#print("[RENAMED+RESOLVED]", func_idb_name_str, "TO", func_name)
 							else:
 								print("[IGNORED] Function @ 0x{:X} seems named.".format(ea))
+							idc.set_color(ea, 2, 0xd7d7d7)
 						else:
 							print("[UNKNOWN ERROR]")
 					else:
@@ -233,8 +234,8 @@ class ImportFileMenuHandler(idaapi.action_handler_t):
 
 				counter += 1
 
-		del lines[:]
-		del sig_list[:]
+		del lines
+		del sig_list
 
 		print("------------------------------------------")
 		print("Resolved ({}/{}) Functions, {} Lines!".format(resolved_count, counter, count))
@@ -365,7 +366,8 @@ class CFSSignaturePlugin(idaapi.plugin_t):
 				IDACtxEntry(export_signatures_go),                          # The action handler.
 				"",                                                         # Optional: action shortcut
 				"Export Hashes",                                        # Optional: tooltip
-				35                                                          # Icon
+				35,                                                         # Icon
+				ida_kernwin.ADF_NO_UNDO
 			)
 		else:
 			# Describe the action using python2 copy
@@ -375,7 +377,8 @@ class CFSSignaturePlugin(idaapi.plugin_t):
 				IDACtxEntry(export_signatures_go),                      # The action handler.
 				"",                                                     # Optional: action shortcut
 				"Export Hashes",                                    # Optional: tooltip
-				35                                                      # Icon
+				35,                                                     # Icon
+				ida_kernwin.ADF_NO_UNDO
 			)
 
 		# register the action with IDA
@@ -388,7 +391,8 @@ class CFSSignaturePlugin(idaapi.plugin_t):
 				ImportFileMenuHandler(),  # The action handler.
 				"",   # Optional: the action shortcut.
 				'Import Hashes',  # Optional: the action tooltip.
-				self.ACTION_TOOLTIP_ICON
+				self.ACTION_TOOLTIP_ICON,
+				ida_kernwin.ADF_NO_UNDO
 			)
 		else:
 			# Describe the action using python2 copy
@@ -398,7 +402,8 @@ class CFSSignaturePlugin(idaapi.plugin_t):
 				ImportFileMenuHandler(),  # The action handler.
 				"",   # Optional: the action shortcut.
 				'Import Hashes',  # Optional: the action tooltip.
-				self.ACTION_TOOLTIP_ICON
+				self.ACTION_TOOLTIP_ICON,
+				ida_kernwin.ADF_NO_UNDO
 			)
 
 		# register the action with IDA
@@ -608,7 +613,7 @@ def export_signatures_go(ctx):
 
 	idaapi.show_wait_box("Exporting signatures...")
 
-	if idaapi.wasBreak():
+	if ida_kernwin.user_cancelled():
 		return
 
 	# Build sigs and export!
@@ -623,7 +628,7 @@ def export_signatures_go(ctx):
 			end = FixupFunctionEnd(start, end)
 			func_name = idc.get_func_name(start)
 
-			if idaapi.wasBreak():
+			if ida_kernwin.user_cancelled():
 				break
 
 			prefix = ""
@@ -652,8 +657,8 @@ def export_signatures_go(ctx):
 
 		file.close()
 
-	del sig_list[:]
-	del selected_funcs[:]
+	del sig_list
+	del selected_funcs
 
 	idaapi.hide_wait_box()
 
