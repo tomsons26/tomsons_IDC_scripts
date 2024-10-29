@@ -16,6 +16,10 @@ import ida_kernwin
 
 ASM_DUMP_PATH = "D:\\Temp\\"
 
+# .asm is appended
+PROJECT_NAME = "project"
+TARGET_NAME = "target"
+
 def clear_output():
 	form = idaapi.find_widget("Output window")
 	idaapi.activate_widget(form, True)
@@ -227,7 +231,6 @@ def immediate_hash(addr):
 			value = ida_ua.get_immvals(ea, c)
 			if len(value) == 0:
 				continue
-
 
 			#print hex(ea), "type ", v.type, " dtype", v.dtype, "//flags ", get_full_flags(ea)
 
@@ -763,10 +766,10 @@ def dump_select_func_list(ctx):
 		print('%s-%s-%s|%d\t//%s\t//%d' % (item.ihash, item.vhash, item.bhash, xref_count(item.addr), item.name, item.size))
 
 def dump_project_asm(ctx):
-	dump_func(ctx, "project", idc.get_screen_ea(), is_cnc())
+	dump_func(ctx, PROJECT_NAME, idc.get_screen_ea(), is_cnc())
 
 def dump_target_asm(ctx):
-	dump_func(ctx, "target", idc.get_screen_ea(), is_cnc())
+	dump_func(ctx, TARGET_NAME, idc.get_screen_ea(), is_cnc())
 
 def dump_list(ctx):
 	dump_func_list(ctx, 0)
@@ -774,7 +777,8 @@ def dump_list(ctx):
 def dump_sorted_list(ctx):
 	dump_func_list(ctx, 1)
 
-hooks = None
+def no_op(ctx):
+	return
 
 # for the sake of knowing its active, appears as a text button next analyze buttons
 ACTION_DMP1 = "asmdumpplugin:dmp1"
@@ -783,115 +787,100 @@ ACTION_DMP3 = "asmdumpplugin:dmp3"
 ACTION_DMP4 = "asmdumpplugin:dmp4"
 ACTION_DMP5 = "asmdumpplugin:dmp5"
 
-def no_op(ctx):
-	return
+def asm_dumper_init():
+	if idaapi.register_action(idaapi.action_desc_t(
+			ACTION_DMP1,
+			"Dump Project ASM",
+			ctx_wrapper(dump_project_asm),
+			None,
+			"",
+			-1,
+			ida_kernwin.ADF_NO_UNDO
+			)):
 
-if idaapi.register_action(idaapi.action_desc_t(
-		ACTION_DMP1,					# Name. Acts as an ID. Must be unique.
-		"Dump Project ASM",				# Label. That's what users see.
-		ctx_wrapper(dump_project_asm),	# Handler. Called when activated, and for updating
-		None,
-		"",
-		-1,								# Optional: the action icon
-		ida_kernwin.ADF_NO_UNDO
-		)):
+		# describe the action
+		irraction_desc = idaapi.action_desc_t(
+			ACTION_DMP2,
+			"Dump Target ASM",
+			ctx_wrapper(dump_target_asm),
+			None,
+			"",
+			-1,
+			ida_kernwin.ADF_NO_UNDO
+		)
+		assert idaapi.register_action(irraction_desc), "Action registration failed"
 
-	# describe the action
-	irraction_desc = idaapi.action_desc_t(
-		ACTION_DMP2,
-		"Dump Target ASM",
-		ctx_wrapper(dump_target_asm),
-		None,
-		"",
-		-1,
-		ida_kernwin.ADF_NO_UNDO
-	)
-	assert idaapi.register_action(irraction_desc), "Action registration failed"
+		irraction_desc = idaapi.action_desc_t(
+			ACTION_DMP3,
+			"Dump Func List",
+			ctx_wrapper(dump_list),
+			None,
+			"",
+			-1,
+			ida_kernwin.ADF_NO_UNDO
+		)
+		assert idaapi.register_action(irraction_desc), "Action registration failed"
 
-	irraction_desc = idaapi.action_desc_t(
-		ACTION_DMP3,						# The action name.
-		"Dump Func List",					# The action text.
-		ctx_wrapper(dump_list),				# The action handler.
-		None,								# Optional: action shortcut
-		"",									# Optional: tooltip
-		-1,									# Optional: the action icon
-		ida_kernwin.ADF_NO_UNDO
-	)
-	assert idaapi.register_action(irraction_desc), "Action registration failed"
+		irraction_desc = idaapi.action_desc_t(
+			ACTION_DMP4,
+			"Dump Sorted Func List",
+			ctx_wrapper(dump_sorted_list),
+			None,
+			"",
+			-1,
+			ida_kernwin.ADF_NO_UNDO
+		)
+		assert idaapi.register_action(irraction_desc), "Action registration failed"
 
-	irraction_desc = idaapi.action_desc_t(
-		ACTION_DMP4,
-		"Dump Sorted Func List",
-		ctx_wrapper(dump_sorted_list),
-		None,
-		"",
-		-1,
-		ida_kernwin.ADF_NO_UNDO
-	)
-	assert idaapi.register_action(irraction_desc), "Action registration failed"
+		irraction_desc = idaapi.action_desc_t(
+			ACTION_DMP5,
+			"Dump Select Func List",
+			ctx_wrapper(dump_select_func_list),
+			None,
+			"",
+			-1,
+			ida_kernwin.ADF_NO_UNDO
+		)
+		assert idaapi.register_action(irraction_desc), "Action registration failed"
 
-	irraction_desc = idaapi.action_desc_t(
-		ACTION_DMP5,
-		"Dump Select Func List",
-		ctx_wrapper(dump_select_func_list),
-		None,
-		"",
-		-1,
-		ida_kernwin.ADF_NO_UNDO
-	)
-	assert idaapi.register_action(irraction_desc), "Action registration failed"
+		print("Actions registered. Attaching to menu.")
 
-	print("Actions registered. Attaching to menu.")
+		# Insert the action in a toolbar
+		if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP1):
+			print("Attached to toolbar.")
+		else:
+			print("Failed attaching to toolbar.")
 
-	# Insert the action in a toolbar
-	if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP1):
-		print("Attached to toolbar.")
-	else:
-		print("Failed attaching to toolbar.")
+		# Insert the action in a toolbar
+		if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP2):
+			print("Attached to toolbar.")
+		else:
+			print("Failed attaching to toolbar.")
 
-	# Insert the action in a toolbar
-	if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP2):
-		print("Attached to toolbar.")
-	else:
-		print("Failed attaching to toolbar.")
+		# Insert the action in a toolbar
+		if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP3):
+			print("Attached to toolbar.")
+		else:
+			print("Failed attaching to toolbar.")
 
-	# Insert the action in a toolbar
-	if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP3):
-		print("Attached to toolbar.")
-	else:
-		print("Failed attaching to toolbar.")
+		# Insert the action in a toolbar
+		if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP4):
+			print("Attached to toolbar.")
+		else:
+			print("Failed attaching to toolbar.")
 
-	# Insert the action in a toolbar
-	if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP4):
-		print("Attached to toolbar.")
-	else:
-		print("Failed attaching to toolbar.")
+		# Insert the action in a toolbar
+		if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP5):
+			print("Attached to toolbar.")
+		else:
+			print("Failed attaching to toolbar.")
 
-	# Insert the action in a toolbar
-	if idaapi.attach_action_to_toolbar("AnalysisToolBar", ACTION_DMP5):
-		print("Attached to toolbar.")
-	else:
-		print("Failed attaching to toolbar.")
+		if idc.get_segm_end(ida_ida.inf_get_min_ea()) >= 0x006C0000:
+			# assume binary is too large to handle it currently, disable full function list buttons
+			idaapi.unregister_action(ACTION_DMP3)
+			idaapi.unregister_action(ACTION_DMP4)
 
-	if idc.get_segm_end(ida_ida.inf_get_min_ea()) >= 0x006C0000:
-		# assume binary is too large to handle it currently, disable full function list buttons
-		idaapi.unregister_action(ACTION_DMP3)
-		idaapi.unregister_action(ACTION_DMP4)
-
-
-	class Hooks(idaapi.UI_Hooks):
-		"""
-		#def finish_populating_widget_popup(self, form, popup):
-			#if idaapi.get_widget_type(form) == idaapi.BWN_DISASM:
-				#idaapi.attach_action_to_popup(form, popup, act_name, None)
-
-		#def finish_populating_widget_popup(self, form, popup):
-		"""
-
-	hooks = Hooks()
-	hooks.hook()
-else:
-	print("Action found; unregistering.")
+def asm_dumper_term():
 	# No need to call detach_action_from_menu(); it'll be
 	# done automatically on destruction of the action.
 	if idaapi.unregister_action(ACTION_DMP1):
@@ -899,10 +888,28 @@ else:
 		idaapi.unregister_action(ACTION_DMP3)
 		idaapi.unregister_action(ACTION_DMP4)
 		idaapi.unregister_action(ACTION_DMP5)
-		print("Unregistered.")
 	else:
 		print("Failed to unregister action.")
 
-	if hooks is not None:
-		hooks.unhook()
-		hooks = None
+class asm_dumper_t(idaapi.plugin_t):
+	#flags = idaapi.PLUGIN_FIX
+	flags = 0
+	comment = "ASM dumper script"
+	help = ""
+	wanted_name = "ASM Dumper Script"
+	wanted_hotkey = ""
+
+	def init(self):
+		print("Registering ASM Dumper.")
+		asm_dumper_init()
+		return idaapi.PLUGIN_KEEP
+
+	def run(self, arg):
+		pass
+
+	def term(self):
+		print("Unregistering ASM Dumper.")
+		asm_dumper_term()
+
+def PLUGIN_ENTRY():
+	return asm_dumper_t()
