@@ -6,6 +6,8 @@
 #	shows a list of things it can't auto flag as functions,
 #	shows a list of unknown data that isn't padding
 #
+#	After making significant fixups press Delete to refresh list
+#
 #	NOTE script should be retrun after fixes are made if results window is titled "(Maxed out, Fix and Rerun)"
 #
 # TODO
@@ -29,15 +31,22 @@ class MyChoose(Choose):
 	def __init__(self):
 		Choose.__init__(self, 'Results', [ ["Address", 30], ["Info", 30] ])
 		self.n = 0
-		self.items = self.load_items()
-		self.n = len(self.items)
+		self.items = []
+		self.n = 0
 		self.icon = 5
 
 	def OnInit(self):
+		self.items = self.load_items()
+		self.n = len(self.items)
 		return True
 
 	def OnGetSize(self):
 		return len(self.items)
+
+	def OnDeleteLine(self, n):
+		self.OnInit()
+		# try to preserve the cursor
+		return [ida_kernwin.Choose.ALL_CHANGED] + self.adjust_last_item(n)
 
 	def OnGetLine(self, n):
 		return self.items[n]
