@@ -54,7 +54,6 @@ static GetAsciizStr(x)
 //
 static MakeSpecialName(name, type, adj)
 {
-
   auto basename;
   //.?AUA@@ = typeid(struct A)
   //basename = A@@
@@ -241,10 +240,8 @@ static MakeSpecialName(name, type, adj)
 //
 static DumpNestedClass2(x, indent, contained, f)
 {
-
   auto indent_str,i,a,n,p,s,off;
   indent_str="";i=0;
-
   while(i<indent)
   {
     indent_str=indent_str+"    ";
@@ -266,7 +263,6 @@ static DumpNestedClass2(x, indent, contained, f)
     a=a+4*(n+1);
     i=i+n+1;
   }
-
 }
 
 //
@@ -464,7 +460,6 @@ static DoVtable(a,f)
   if (substr(name,0,4)!="??_7") name=0;
  
   x = Dword(a-4); 
-
   //otherwise try to get it from RTTI
   if (IsValidCOL(x))
   {
@@ -476,7 +471,6 @@ static DoVtable(a,f)
       Parse_CHD2(Dword(x+16),0,f);
     MakeName(a, name);
   }
-
   if (name!=0)
   {
     s = Demangle(name, 0x00004006);
@@ -514,7 +508,6 @@ static DoVtable(a,f)
          }
        }
     }
-
     if (q)
     {           
        if (i>1) s = form("  %a (%d times)",q,i);
@@ -603,7 +596,6 @@ static checkSDD(x,name,vtable,gate,f)
     //E9 xx xx xx xx   jmp   xxxxxxx
     return checkSDD(getRelJmpTarget(x),name,vtable,1,f);
   }
-
   else if (matchBytes(x,"83E9??E9")) {
     //thunk
     //83 E9 xx        sub     ecx, xx
@@ -618,7 +610,6 @@ static checkSDD(x,name,vtable,gate,f)
     }
     return t;
   }
-
   else if (matchBytes(x,"81E9????????E9")) {
     //thunk
     //81 E9 xx xx xx xx        sub     ecx, xxxxxxxx
@@ -633,7 +624,6 @@ static checkSDD(x,name,vtable,gate,f)
     }
     return t;
   }
-
   else if (matchBytes(x,"568BF1E8????????F64424080174") && matchBytes(x+15+Byte(x+14),"8BC65EC20400"))
   {
     //56                             push    esi
@@ -658,7 +648,6 @@ static checkSDD(x,name,vtable,gate,f)
       a = getRelJmpTarget(a);
     }
   }
-
   else if (matchBytes(x,"568BF1FF15????????F64424080174") && matchBytes(x+16+Byte(x+15),"8BC65EC20400"))
   {
     //56                             push    esi
@@ -683,7 +672,6 @@ static checkSDD(x,name,vtable,gate,f)
       a = getRelJmpTarget(a);
     }*/
   }
-
   else if (matchBytes(x,"558BEC51894DFC8B4DFCE8????????8B450883E00185C0740C8B4DFC51E8????????83C4048B45FC8BE55DC20400") ||
            matchBytes(x,"558BEC51894DFC8B4DFCE8????????8B450883E00185C074098B4DFC51E8????????8B45FC8BE55DC20400"))
   {
@@ -716,7 +704,6 @@ static checkSDD(x,name,vtable,gate,f)
       a = getRelJmpTarget(a);
     }
   }
-
   else if (matchBytes(x,"568D71??578D7E??8BCFE8????????F644240C01"))
   {
     //56                             push    esi
@@ -733,7 +720,6 @@ static checkSDD(x,name,vtable,gate,f)
     }
     t=SN_scalardtr;
   }
-
   else if (matchBytes(x,"568DB1????????578DBE????????8BCFE8????????F644240C01"))
   {
     //56                             push    esi
@@ -750,7 +736,6 @@ static checkSDD(x,name,vtable,gate,f)
     }
     t = SN_scalardtr;
   }
-
   else if ((matchBytes(x,"F644240401568BF1C706") /*&& Dword(x+10)==vtable*/) || 
            (matchBytes(x,"8A442404568BF1A801C706") /*&& Dword(x+11)==vtable */) ||
            (matchBytes(x,"568BF1B9????????8B46??C706????????50E8????????8A442408C746??????????A801C706") /*&& Dword(x+11)==vtable */) || //Westwood SDTOR used for Blitters
@@ -779,7 +764,6 @@ static checkSDD(x,name,vtable,gate,f)
     //C2 04 00                       retn    4  
     t = SN_scalardtr;
   }
-
   else if (matchBytes(x,"538A5C2408568BF1F6C302742B8B46FC578D7EFC68????????506A??56E8") || 
            matchBytes(x,"538A5C2408F6C302568BF1742E8B46FC5768????????8D7EFC5068????????56E8"))
   {
@@ -968,16 +952,13 @@ static checkSDD(x,name,vtable,gate,f)
     } else if ( t == SN_scalardtr ) {
       s = "scalar";
     }
- 
     if (t == SN_vectordtr || t == SN_scalardtr) {
       Message("  %s deleting destructor at %a\n",s,x);
       fprintf(f, "  %s deleting destructor: %08.8Xh\n",s,x);
     }
- 
     if (name!=0) {
       MakeName(x, MakeSpecialName(name,t,0));
     }
- 
     if (t == SN_vectordtr || t == SN_scalardtr) {
       if (a!=BADADDR) {
         Message("  virtual destructor at %a\n",a);
