@@ -46,7 +46,9 @@ class MyChoose(Choose):
 	def OnDeleteLine(self, n):
 		self.OnInit()
 		# try to preserve the cursor
-		return [ida_kernwin.Choose.ALL_CHANGED] + self.adjust_last_item(n)
+		if n != 0:
+			return (ida_kernwin.Choose.ALL_CHANGED, self.adjust_last_item(n))
+		return (ida_kernwin.Choose.ALL_CHANGED, n)
 
 	def OnGetLine(self, n):
 		return self.items[n]
