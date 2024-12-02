@@ -42,7 +42,7 @@ file_name = AskFile(1, "*.symlist", "symlist File")
 specific = AskStr("", "Type In string to filter.\nCase Sensitive!\nLeave black for all symbols.")
 
 if file_name:
-    idc_file = file(file_name, "w")
+    idc_file = open(file_name, "w")
     Write_IDC(idc_file, specific)
     idc_file.close()
 else:
